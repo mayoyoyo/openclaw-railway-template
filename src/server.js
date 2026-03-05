@@ -1091,6 +1091,21 @@ const server = app.listen(PORT, () => {
       } catch (err) {
         console.warn(`[wrapper] doctor --fix failed: ${err.message}`);
       }
+
+      // Apply env-var config overrides before gateway starts
+      const configOverrides = {
+        "tools.profile": process.env.OPENCLAW_TOOLS_PROFILE,
+        "commands.config": process.env.OPENCLAW_COMMANDS_CONFIG,
+      };
+      for (const [key, value] of Object.entries(configOverrides)) {
+        if (value) {
+          console.log(`[wrapper] applying config override: ${key}=${value}`);
+          const r = await runCmd(OPENCLAW_NODE, clawArgs(["config", "set", key, value]));
+          console.log(`[config] ${key} exit=${r.code}`);
+          if (r.output) console.log(r.output);
+        }
+      }
+
       await ensureGatewayRunning();
     })().catch((err) => {
       console.error(`[wrapper] failed to start gateway at boot: ${err.message}`);
